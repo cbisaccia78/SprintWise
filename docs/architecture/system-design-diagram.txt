@@ -1,0 +1,55 @@
+                         ┌─────────────────────────┐
+                         │       Frontend UI       │
+                         │  (Web / Mobile / etc.)  │
+                         └─────────────┬───────────┘
+                                       │
+                                       ▼
+                         ┌─────────────────────────┐
+                         │    API Gateway Layer    │
+                         │ (Load Balancer, AuthZ)  │
+                         └─────────────┬───────────┘
+                    ┌──────────────────┴──────────────────┐
+                    │                                     │
+                    ▼                                     ▼
+          ┌────────────────────┐                ┌───────────────────────┐
+          │ Task Mgmt Service  │                │  AI Estimation Svc    │
+          │(CRUD, Sprint logic,│   RPC/REST     │(ML Inference, Model   │
+          │Issue tracking)     │ <------------> │ Training Pipelines)   │
+          └────────────────────┘                └───────────────────────┘
+                    │                                     │
+                    │                                     │
+                    ▼                                     ▼
+   ┌────────────────────────────┐                ┌────────────────────────────┐
+   │    Primary Database        │                │  Vector DB (optional)      │
+   │ (PostgreSQL, MySQL, etc.)  │                │ (Similarity search, code   │
+   └────────────────────────────┘                │ snippet embeddings, tasks) │
+                                                 └────────────────────────────┘
+                    │                                     │
+                    │                                     │
+                    │                                     ▼
+                    │                         ┌────────────────────────────┐
+                    │                         │  Model Artifact Store      │
+                    │                         │ (S3/GCS for trained models │
+                    │                         │   or large datasets)       │
+                    │                         └────────────────────────────┘
+                    ▼
+   ┌────────────────────────────┐
+   │  Code Analysis Service     │
+   │ (Static analysis, diffs,   │
+   │ code embeddings)           │
+   └────────────────────────────┘
+
+                    ┌─────────────────────────┐
+                    │    Notification Svc     │
+                    │ (Email, Slack, etc.)    │
+                    └─────────────────────────┘
+
+                    ┌─────────────────────────┐
+                    │     User Service        │
+                    │   (AuthN, RBAC, etc.)   │
+                    └─────────────────────────┘
+
+                    ┌─────────────────────────┐
+                    │ Monitoring / Logging    │
+                    │  (ELK, Prometheus, etc.)│
+                    └─────────────────────────┘
