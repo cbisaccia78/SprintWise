@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 
@@ -9,6 +9,8 @@ class Task(db.Model):
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
     description = Column(String(255), nullable=False)
+    status = Column(String(50), default='To Do')
+    estimated_time = Column(Float, default=0.0)
     project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -41,6 +41,8 @@ class TestTask(unittest.TestCase):
         self.assertEqual(task_out['title'], data['title'])
         self.assertEqual(task_out['description'], data['description'])
         self.assertEqual(task_out['project_id'], data['project_id'])
+        self.assertEqual(task_out['status'], 'To Do')
+        self.assertEqual(task_out['estimated_time'], 0.0)
 
     def test_get_task(self):
         with self.app.app_context():
@@ -61,6 +63,8 @@ class TestTask(unittest.TestCase):
         self.assertEqual(task_out['title'], task.title)
         self.assertEqual(task_out['description'], task.description)
         self.assertEqual(task_out['project_id'], task.project_id)
+        self.assertEqual(task_out['status'], 'To Do')
+        self.assertEqual(task_out['estimated_time'], 0.0)
 
     def test_get_all_tasks(self):
         with self.app.app_context():
@@ -95,6 +99,8 @@ class TestTask(unittest.TestCase):
         data = {
             'title': 'Updated Task',
             'description': 'Updated Description',
+            'status': 'In Progress',
+            'estimated_time': 1.5,
             'project_id': project_id
         }
 
