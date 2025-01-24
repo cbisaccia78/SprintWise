@@ -1,17 +1,17 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 
 from src.database import db
 
-class Task(db.Model):
-    __tablename__ = 'tasks'
+class Project(db.Model):
+    __tablename__ = 'projects'
+
     id = Column(Integer, primary_key=True)
-    title = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
     description = Column(String(255), nullable=False)
-    project_id = Column(Integer, ForeignKey('projects.id'), nullable=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def __repr__(self):
-        return f'<Task {self.title}>'
+    tasks = relationship('Task', backref=backref('project', lazy='joined'))
