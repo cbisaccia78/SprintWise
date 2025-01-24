@@ -6,6 +6,7 @@ from .database import create_db
 from .settings import Config
 
 from .routes.task_routes import task_bp
+from .routes.project_routes import project_bp
 
 def create_app(config=None):
     app = Flask(__name__)
@@ -18,5 +19,7 @@ def create_app(config=None):
 
     create_db(app)
 
-    app.register_blueprint(task_bp)
+    app.register_blueprint(task_bp, url_prefix='/tasks')
+    app.register_blueprint(project_bp, url_prefix='/projects')
+
     return app
