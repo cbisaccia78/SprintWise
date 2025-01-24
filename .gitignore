@@ -1,1 +1,68 @@
-**/venv
+# =============================================================================
+#  General
+# =============================================================================
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.*  
+
+# Local IDE / Editor settings
+.vscode/
+.idea/
+
+# Build artifacts
+dist/
+build/
+coverage/
+
+# =============================================================================
+#  Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+
+# =============================================================================
+#  Docker
+# =============================================================================
+# Ignore the Docker build context directories/files if needed
+**/Dockerfile*
+**/docker-compose*
+
+# =============================================================================
+#  Terraform
+# =============================================================================
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+
+# =============================================================================
+#  Kubernetes
+# =============================================================================
+# (No specific ignore patterns for Kubernetes by default,
+# but you might add any generated YAML files if needed)
+
+# =============================================================================
+#  Misc
+# =============================================================================
+# Temporary or backup files
+*.tmp
+*.swp
+*.swo
+*.bak
