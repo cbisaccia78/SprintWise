@@ -11,15 +11,15 @@ task_bp = Blueprint('task_bp', __name__)
 @task_bp.route('', methods=['GET'])
 def get_tasks():
     tasks = Task.query.all()
-    tasks = [Task.model_validate(task).model_dump() for task in tasks]
+    tasks = [TaskRead.model_validate(task).model_dump() for task in tasks]
     return jsonify([task for task in tasks]), 200
 
 @task_bp.route('/<int:task_id>', methods=['GET'])
 def get_task(task_id):
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task:
         return jsonify({'error': 'Task not found'}), 404
-    task = Task.model_validate(task).model_dump()
+    task = TaskRead.model_validate(task).model_dump()
     return jsonify(task), 200
 
 @task_bp.route('', methods=['POST'])
@@ -38,7 +38,7 @@ def create_task():
 
 @task_bp.route('/<int:task_id>', methods=['PUT'])
 def update_task(task_id):
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     
@@ -61,7 +61,7 @@ def update_task(task_id):
 
 @task_bp.route('/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     db.session.delete(task)

@@ -12,11 +12,11 @@ project_bp = Blueprint('project_bp', __name__)
 def get_projects():
     projects = Project.query.all()
     projects = [ProjectRead.model_validate(project).model_dump() for project in projects]
-    return jsonify([[project] for project in projects]), 200
+    return jsonify([project for project in projects]), 200
 
 @project_bp.route('/<int:project_id>', methods=['GET'])
 def get_project(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     project = ProjectRead.model_validate(project).model_dump()
@@ -38,7 +38,7 @@ def create_project():
 
 @project_bp.route('/<int:project_id>', methods=['PUT'])
 def update_project(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
@@ -59,7 +59,7 @@ def update_project(project_id):
 
 @project_bp.route('/<int:project_id>', methods=['DELETE'])
 def delete_project(project_id):
-    project = Project.query.get(project_id)
+    project = db.session.get(Project, project_id)
     if not project:
         return jsonify({'error': 'Project not found'}), 404
     
