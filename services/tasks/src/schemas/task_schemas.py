@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: str = Field(min_length=1, max_length=255)
+    assigned_user: Optional[str] = Field(None, min_length=1, max_length=255)
+    priority: Optional[str] = Field(None, min_length=1, max_length=7)
 
 class TaskCreate(TaskBase):
     project_id: int

@@ -54,6 +54,15 @@ def update_task(task_id):
         task.description = task_data.description
     if task_data.project_id:
         task.project_id = task_data.project_id
+    if task_data.status:
+        task.status = task_data.status
+    if task_data.estimated_time:
+        task.estimated_time = task_data.estimated_time
+    if task_data.assigned_user:
+        task.assigned_user = task_data.assigned_user
+    if task_data.priority:
+        task.priority = task_data.priority
+    
     
     db.session.commit()
     task = TaskRead.model_validate(task).model_dump()

@@ -101,6 +101,8 @@ class TestTask(unittest.TestCase):
             'description': 'Updated Description',
             'status': 'In Progress',
             'estimated_time': 1.5,
+            'assigned_user': 'Test User',
+            'priority': 'High',
             'project_id': project_id
         }
 
@@ -115,6 +117,10 @@ class TestTask(unittest.TestCase):
         self.assertEqual(task_out['title'], data['title'])
         self.assertEqual(task_out['description'], data['description'])
         self.assertEqual(task_out['project_id'], data['project_id'])
+        self.assertEqual(task_out['status'], data['status'])
+        self.assertEqual(task_out['estimated_time'], data['estimated_time'])
+        self.assertEqual(task_out['assigned_user'], data['assigned_user'])
+        self.assertEqual(task_out['priority'], data['priority'])
 
     def test_delete_task(self):
         with self.app.app_context():
