@@ -4,3 +4,4 @@ flask-migrate
 pydantic
 email-validator
 alembic
+confluent-kafka
