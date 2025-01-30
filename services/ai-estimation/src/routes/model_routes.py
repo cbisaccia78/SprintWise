@@ -1,7 +1,13 @@
+from json import dumps
+
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
+from confluent_kafka import Producer
 
 from src.schemas.model_schemas import TaskEstimateRequest
+from src.settings import config
+
+producer = Producer(config.kafka_producer_config)
 
 model_bp = Blueprint('model_bp', __name__)
 
@@ -21,5 +27,7 @@ def estimate_task():
 
     ret["estimated_time"] = 2.4
     ret["confidence"] = 0.9
+
+    producer.produce('estimate-complete', key=str(ret['task_id']), value=dumps(ret))
 
     return jsonify(ret), 201

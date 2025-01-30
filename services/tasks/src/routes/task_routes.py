@@ -1,10 +1,17 @@
+import json
+
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
+from confluent_kafka import Producer
 
 from src.database import db
+from src.settings import config
 
 from src.schemas.task_schemas import TaskCreate, TaskRead, TaskUpdate
 from src.models import Task
+
+producer = Producer(config.kafka_producer_config)
+topic = 'task-created'
 
 task_bp = Blueprint('task_bp', __name__)
 
@@ -33,7 +40,12 @@ def create_task():
     task = Task(title=task.title, description=task.description, project_id=task.project_id)
     db.session.add(task)
     db.session.commit()
+    
     task = TaskRead.model_validate(task).model_dump()
+
+    producer.produce(topic, key=str(task.id), value=json.dumps(task))
+    producer.flush()
+
     return jsonify(task), 201
 
 @task_bp.route('/<int:task_id>', methods=['PUT'])
