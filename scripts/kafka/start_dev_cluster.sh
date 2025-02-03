@@ -1,7 +1,11 @@
 #!/bin/bash
 
-KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+KAFKA_CLUSTER_ID="$(${KAFKA_LOCATION}/bin/kafka-storage.sh random-uuid)"
 
-bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/kraft/reconfig-server.properties
+# Remove existing storage directory and temporary files
+rm -rf /tmp/kraft-combined-logs
+rm -rf /tmp/kafka-logs
 
-bin/kafka-server-start.sh config/kraft/reconfig-server.properties
+${KAFKA_LOCATION}/bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c ${KAFKA_LOCATION}/config/kraft/reconfig-server.properties
+
+${KAFKA_LOCATION}/bin/kafka-server-start.sh ${KAFKA_LOCATION}/config/kraft/reconfig-server.properties
