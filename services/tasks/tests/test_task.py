@@ -1,6 +1,7 @@
 import unittest
 import json
 
+from src.settings import config as cfg
 from src.app import create_app
 from src.database import db
 
@@ -9,6 +10,7 @@ from src.models import Task, Project
 class TestTask(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cfg.testing = True
         cls.app = create_app()
         cls.client = cls.app.test_client()
 

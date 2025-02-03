@@ -2,10 +2,12 @@ import unittest
 import json
 
 from src.app import create_app
+from src.settings import config as cfg
 
 class TestModelRoute(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cfg.testing = True
         cls.app = create_app()
         cls.client = cls.app.test_client()
     

@@ -22,7 +22,6 @@ def create_app(config=None):
 
     app.register_blueprint(task_bp, url_prefix='/tasks')
     app.register_blueprint(project_bp, url_prefix='/projects')
-
     if not config.testing:
         worker = EstimateCompleteConsumer()
 

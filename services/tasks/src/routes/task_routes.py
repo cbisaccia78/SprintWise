@@ -10,8 +10,9 @@ from src.settings import config
 from src.schemas.task_schemas import TaskCreate, TaskRead, TaskUpdate
 from src.models import Task
 
-producer = Producer(config.kafka_producer_config)
-topic = 'task-created'
+if not config.testing:
+    producer = Producer(config.kafka_producer_config)
+    topic = 'task-created'
 
 task_bp = Blueprint('task_bp', __name__)
 
@@ -43,8 +44,9 @@ def create_task():
     
     task = TaskRead.model_validate(task).model_dump()
 
-    producer.produce(topic, key=str(task.id), value=json.dumps(task))
-    producer.flush()
+    if not config.testing:
+        producer.produce(topic, key=str(task['id']), value=json.dumps(task))
+        producer.flush()
 
     return jsonify(task), 201
 
