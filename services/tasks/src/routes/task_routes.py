@@ -44,6 +44,10 @@ def create_task():
     
     task = TaskRead.model_validate(task).model_dump()
 
+    task['created_at'] = str(task['created_at'])
+    if 'updated_at' in task:
+        task['updated_at'] = str(task['updated_at'])
+
     if not config.testing:
         producer.produce(topic, key=str(task['id']), value=json.dumps(task))
         producer.flush()
