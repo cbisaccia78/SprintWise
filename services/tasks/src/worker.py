@@ -67,7 +67,7 @@ class EstimateCompleteConsumer:
     def update_task(self, task_id, task_estimate):
         url = f'http://localhost:5000/tasks/{task_id}'
         data = {
-            'estimated_time': task_estimate
+            'estimated_time': float(task_estimate)
         }
         try:
             response = requests.put(url, json=data)
