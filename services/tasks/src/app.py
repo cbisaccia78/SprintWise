@@ -23,14 +23,16 @@ def create_app(config=None):
     app.register_blueprint(task_bp, url_prefix='/tasks')
     app.register_blueprint(project_bp, url_prefix='/projects')
 
-    worker = EstimateCompleteConsumer()
+    if not config.testing:
+        worker = EstimateCompleteConsumer()
 
-    worker_thread = Thread(target=worker.start).start()
+        worker_thread = Thread(target=worker.start)
 
-    def shutdown_thread():
-        worker.stop()
-        worker_thread.join()
-
-    app.teardown_appcontext(lambda exception: shutdown_thread())
+        def shutdown_thread():
+            worker.stop()
+            worker_thread.join()
+        
+        worker_thread.start()
+        app.teardown_appcontext(lambda exception: shutdown_thread())
 
     return app

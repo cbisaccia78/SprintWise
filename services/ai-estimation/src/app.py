@@ -14,16 +14,17 @@ def create_app(config=None):
 
     app.register_blueprint(model_bp, url_prefix='/models')
 
-    worker = TaskCreatedConsumer()
+    if not config.testing:
+        worker = TaskCreatedConsumer()
 
-    Thread(target=worker.start).start()
-    def shutdown_thread():
-        worker.stop()  # Assuming the worker has a stop method to terminate the thread gracefully
-        worker_thread.join()
+        worker_thread = Thread(target=worker.start)
+        
+        def shutdown_thread():
+            worker.stop()  # Assuming the worker has a stop method to terminate the thread gracefully
+            worker_thread.join()
 
-    worker_thread = Thread(target=worker)
-    worker_thread.start()
-    app.teardown_appcontext(lambda exception: shutdown_thread())
+        worker_thread.start()
+        app.teardown_appcontext(lambda exception: shutdown_thread())
 
     return app
 
