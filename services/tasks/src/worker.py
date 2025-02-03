@@ -6,9 +6,9 @@ from confluent_kafka import Consumer
 
 from src.settings import config
 
-class TaskWorker:
+class EstimateCompleteConsumer:
     """
-    TaskWorker is responsible for consuming estimate-complete messages from a Kafka topic 
+    EstimateCompleteConsumer is responsible for consuming estimate-complete messages from a Kafka topic 
     and updating tasks with their estimation asynchronously.
 
     Attributes:
@@ -18,7 +18,7 @@ class TaskWorker:
 
     Methods:
         __init__():
-            Initializes the TaskWorker with default values and a thread pool executor.
+            Initializes the EstimateCompleteConsumer with default values and a thread pool executor.
         
         start():
             Starts the Kafka consumer to listen for messages and process them asynchronously.

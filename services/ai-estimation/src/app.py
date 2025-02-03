@@ -2,19 +2,19 @@ from threading import Thread
 
 from flask import Flask
 
-from src.settings import config
-from src.worker import AIWorker
+from src.settings import config as cfg
+from src.worker import TaskCreatedConsumer
 from src.routes.model_routes import model_bp
 
 def create_app(config=None):
     app = Flask(__name__)
 
     if config is None:
-        config = config
+        config = cfg
 
     app.register_blueprint(model_bp, url_prefix='/models')
 
-    worker = AIWorker()
+    worker = TaskCreatedConsumer()
 
     Thread(target=worker.start).start()
     def shutdown_thread():

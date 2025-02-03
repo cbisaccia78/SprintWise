@@ -6,9 +6,9 @@ from confluent_kafka import Consumer
 
 from src.settings import config
 
-class AIWorker:
+class TaskCreatedConsumer:
     """
-    AIWorker is responsible for consuming task-created events from a Kafka topic 
+    TaskCreatedConsumer is responsible for consuming task-created events from a Kafka topic 
     and asynchronously estimating them by calling an api in the model service
     .
     Attributes:
@@ -17,7 +17,7 @@ class AIWorker:
         executor (ThreadPoolExecutor): A thread pool executor to handle asynchronous task estimation.
     Methods:
         __init__():
-            Initializes the AIWorker with default settings.
+            Initializes the TaskCreatedConsumer with default settings.
         start():
             Starts the worker to consume tasks from the 'task-created' Kafka topic and
             submit them for estimation.
