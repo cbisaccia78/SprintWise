@@ -1,5 +1,6 @@
 import threading
 import requests
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 from confluent_kafka import Consumer
@@ -26,6 +27,8 @@ class TaskCreatedConsumer:
         stop():
             Stops the worker and shuts down the thread pool executor.
     """
+    ESTIMATE_URL = f'http://localhost:5001/models/task'
+
     def __init__(self):
         self.continue_running = False
         self.lock = threading.Lock()
@@ -62,7 +65,8 @@ class TaskCreatedConsumer:
         consumer.close()
     
     def estimate_task(self, task_id, task):
-        url = f'http://localhost:5000/models/task'
+
+        task = json.loads(task)
         data = {
             'task_id': task_id,
             'title': task['title'],
@@ -70,8 +74,9 @@ class TaskCreatedConsumer:
             'code_snippet': '' # empty for now, need to generate code snippet
         }
         try:
-            response = requests.post(url, json=data)
-            if response.status_code == 200:
+            response = requests.post(self.ESTIMATE_URL, json=data)
+
+            if response.status_code == 201:
                 print(f'Successfully estimated {task_id}')
             else:
                 print(f'Failed to estimate task {task_id}: {response.status_code} {response.text}')
