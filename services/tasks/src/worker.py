@@ -7,6 +7,28 @@ from confluent_kafka import Consumer
 from src.settings import config
 
 class TaskWorker:
+    """
+    TaskWorker is responsible for consuming estimate-complete messages from a Kafka topic 
+    and updating tasks with their estimation asynchronously.
+
+    Attributes:
+        continue_running (bool): A flag to control the running state of the worker.
+        lock (threading.Lock): A lock to synchronize access to shared resources.
+        executor (ThreadPoolExecutor): A thread pool executor to handle asynchronous task updates.
+
+    Methods:
+        __init__():
+            Initializes the TaskWorker with default values and a thread pool executor.
+        
+        start():
+            Starts the Kafka consumer to listen for messages and process them asynchronously.
+        
+        update_task(task_id, task_estimate):
+            Sends an HTTP PUT request to update the task with the given ID and estimated time.
+        
+        stop():
+            Stops the worker by setting the continue_running flag to False and shutting down the executor.
+    """
     def __init__(self):
         self.continue_running = False
         self.lock = threading.Lock()

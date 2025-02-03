@@ -4,7 +4,7 @@ class Config:
     def __init__(self):
         self.kafka_consumer_config = {
             'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'),
-            'group.id': os.getenv('KAFKA_GROUP_ID', 'task-completion-group'),
+            'group.id': os.getenv('KAFKA_GROUP_ID', 'task-updator-group'),
             'auto.offset.reset': os.getenv('KAFKA_AUTO_OFFSET_RESET', 'earliest')
         }
 

@@ -7,6 +7,25 @@ from confluent_kafka import Consumer
 from src.settings import config
 
 class AIWorker:
+    """
+    AIWorker is responsible for consuming task-created events from a Kafka topic 
+    and asynchronously estimating them by calling an api in the model service
+    .
+    Attributes:
+        continue_running (bool): A flag to control the running state of the worker.
+        lock (threading.Lock): A lock to synchronize access to shared resources.
+        executor (ThreadPoolExecutor): A thread pool executor to handle asynchronous task estimation.
+    Methods:
+        __init__():
+            Initializes the AIWorker with default settings.
+        start():
+            Starts the worker to consume tasks from the 'task-created' Kafka topic and
+            submit them for estimation.
+        estimate_task(task_id, task):
+            Sends a POST request to an external service to estimate the given task.
+        stop():
+            Stops the worker and shuts down the thread pool executor.
+    """
     def __init__(self):
         self.continue_running = False
         self.lock = threading.Lock()
