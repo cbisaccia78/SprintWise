@@ -13,6 +13,8 @@ from sklearn.model_selection import train_test_split
 MAX_TOKENS = 20000
 MAX_LENGTH = 600
 EMBEDDING_DIM = 300
+NUM_HEADS = 4  # Number of attention heads
+FF_DIM = 512  # Feedforward layer size
 PATH_TO_GLOVE = os.getenv('GLOVE_PATH', None)
 
 embeddings_index = {}
@@ -26,7 +28,7 @@ def parse_glove():
 parse_glove()
 
 if len(sys.argv) != 2:
-    print("Usage: python glove_lstm.py json_data_path")
+    print("Usage: python transformer_model.py json_data_path")
     sys.exit(1)
 
 json_data_path = sys.argv[1]
@@ -134,22 +136,55 @@ title_features = title_embedding_layer(title_input)
 desc_features = description_embedding_layer(desc_input)
 code_features = code_embedding_layer(code_input)
 
-# stack bidirectional LSTM layers for each branch
-def enhanced_branch(features):
-    x = layers.Bidirectional(layers.LSTM(512, return_sequences=True))(features)
-    x = layers.Bidirectional(layers.LSTM(512))(x)
+# Add Position Embeddings
+position_embedding = layers.Embedding(input_dim=MAX_LENGTH, output_dim=EMBEDDING_DIM)
+title_pos = position_embedding(title_input)
+desc_pos = position_embedding(desc_input)
+code_pos = position_embedding(code_input)
+
+title_features += title_pos
+desc_features += desc_pos
+code_features += code_pos
+
+
+def transformer_encoder(inputs, head_size=256, num_heads=4, ff_dim=512, dropout=0.3):
+    """Creates a Transformer Encoder Block."""
+    # Multi-Head Self-Attention
+    x = layers.MultiHeadAttention(num_heads=num_heads, key_dim=head_size)(inputs, inputs)
+    x = layers.Dropout(dropout)(x)
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
+    
+    # Feed Forward Network
+    x_ffn = layers.Dense(ff_dim, activation="relu")(x)
+    x_ffn = layers.Dense(inputs.shape[-1])(x_ffn)
+    
+    # Add & Normalize
+    x = layers.Add()([x, x_ffn])
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
+    
     return x
 
-title_features = enhanced_branch(title_features)
-desc_features = enhanced_branch(desc_features)
-code_features = enhanced_branch(code_features)
 
-# Combine features and add more Dense layers with dropout for extra capacity
+# Transformer Blocks
+title_features = transformer_encoder(title_features, head_size=EMBEDDING_DIM, num_heads=NUM_HEADS, ff_dim=FF_DIM)
+desc_features = transformer_encoder(desc_features, head_size=EMBEDDING_DIM, num_heads=NUM_HEADS, ff_dim=FF_DIM)
+code_features = transformer_encoder(code_features, head_size=EMBEDDING_DIM, num_heads=NUM_HEADS, ff_dim=FF_DIM)
+
+# Pooling (Reduce Sequence to Fixed Size)
+title_features = layers.GlobalAveragePooling1D()(title_features)
+desc_features = layers.GlobalAveragePooling1D()(desc_features)
+code_features = layers.GlobalAveragePooling1D()(code_features)
+
+# Concatenate
 x = layers.concatenate([title_features, desc_features, code_features])
+
+# Dense layers
 x = layers.Dense(256, activation='relu')(x)
-x = layers.Dropout(0.5)(x)
+x = layers.Dropout(0.3)(x)
 x = layers.Dense(128, activation='relu')(x)
-x = layers.Dropout(0.5)(x)
+x = layers.Dropout(0.3)(x)
+
+# Regression Output (time_to_complete_hours)
 output = layers.Dense(1, activation='linear')(x)
 
 # Create and compile model
@@ -187,4 +222,4 @@ test_loss, test_mae = model.evaluate([title_test, desc_test, code_test], y_test)
 print(f"Test Loss: {test_loss:.4f}, Test MAE: {test_mae:.4f}")
 
 # Save model
-model.save("glove_lstm_model.keras")
+model.save("transformer_model.keras")
