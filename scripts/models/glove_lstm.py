@@ -51,9 +51,9 @@ for entry in data:
     # Concatenate all original file contents
     code = "\n".join(original_files.values()) if original_files else ""
 
-    titles.append(title)
-    descriptions.append(description)
-    code_snippets.append(code)
+    titles.append(title if title else "")
+    descriptions.append(description if description else "")
+    code_snippets.append(code if code else "")
     labels.append(time_to_complete)
 
 # Convert lists to numpy arrays
@@ -76,8 +76,11 @@ def create_embedding_layer(text):
         output_mode='int',
         output_sequence_length=MAX_LENGTH
     )
-
-    text_vectorization.adapt(text)
+    try:
+        text_vectorization.adapt(text)
+    except ValueError:
+        print('Error: No data found.')
+        pdb.set_trace()
 
     vocabulary = text_vectorization.get_vocabulary()
     word_index = {word: i for i, word in enumerate(vocabulary)}
@@ -96,7 +99,7 @@ def create_embedding_layer(text):
         EMBEDDING_DIM,
         embeddings_initializer=keras.initializers.Constant(embedding_matrix),
         trainable=False,
-        mask_zero=True
+        #mask_zero=True disable masking for now
     )
 
     return embedding_layer, text_vectorization
@@ -105,7 +108,7 @@ def create_embedding_layer(text):
 title_embedding_layer, title_vectorizer = create_embedding_layer(title_train)
 description_embedding_layer, description_vectorizer = create_embedding_layer(desc_train)
 code_embedding_layer, code_vectorizer = create_embedding_layer(code_train)
-pdb.set_trace()
+
 # Convert text inputs to integer sequences
 title_train = title_vectorizer(title_train).numpy()
 desc_train = description_vectorizer(desc_train).numpy()
@@ -157,14 +160,8 @@ print(model.summary())
 # Add early stopping and model checkpoint
 early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss',
-    patience=10,
+    patience=150,
     restore_best_weights=True
-)
-
-model_checkpoint = keras.callbacks.ModelCheckpoint(
-    'best_model.keras',
-    monitor='val_loss',
-    save_best_only=True
 )
 
 # Train the model
@@ -172,9 +169,12 @@ history = model.fit(
     [title_train, desc_train, code_train], y_train,
     validation_data=([title_val, desc_val, code_val], y_val),
     epochs=10000, batch_size=16,
-    callbacks=[early_stopping, model_checkpoint]
+    callbacks=[early_stopping]
 )
 
 # Evaluate on test set
 test_loss, test_mae = model.evaluate([title_test, desc_test, code_test], y_test)
 print(f"Test Loss: {test_loss:.4f}, Test MAE: {test_mae:.4f}")
+
+# Save model
+model.save("glove_lstm_model.keras")

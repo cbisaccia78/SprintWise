@@ -1,4 +1,4 @@
 sklearn
 keras
-tensorflow
+tensorflow[and-cuda]
 numpy
