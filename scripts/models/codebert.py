@@ -1,5 +1,7 @@
 import json
 import sys
+import os
+import pdb
 
 import numpy as np
 import tensorflow as tf
@@ -8,13 +10,16 @@ import tensorflow.keras as keras
 from transformers import AutoTokenizer, TFAutoModel
 from sklearn.model_selection import train_test_split
 
+tf.keras.backend.clear_session()
+#tf.keras.mixed_precision.set_global_policy('mixed_float16')
+
 # Load CodeBERT tokenizer & model
 MODEL_NAME = "microsoft/codebert-base"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 codebert = TFAutoModel.from_pretrained(MODEL_NAME)
 
 # Function to tokenize inputs for CodeBERT
-def tokenize_inputs(text_list, max_length=128):
+def tokenize_inputs(text_list, max_length=512):
     return tokenizer(
         text_list,
         padding=True,
@@ -24,7 +29,7 @@ def tokenize_inputs(text_list, max_length=128):
     )
 
 if len(sys.argv) != 2:
-    print("Usage: python glove_lstm.py json_data_path")
+    print("Usage: python json_data_path")
     sys.exit(1)
 
 json_data_path = sys.argv[1]
@@ -45,6 +50,12 @@ for entry in data:
 
     if time_to_complete is None:
         continue  # Skip missing labels
+
+    # remove all original files that are empty strings
+    original_files = {k: v for k, v in original_files.items() if v}
+    if not original_files:
+        #pdb.set_trace()
+        continue
 
     # Concatenate all original file contents
     code = "\n".join(original_files.values()) if original_files else ""
@@ -87,18 +98,71 @@ def extract_embeddings(inputs):
     )
     return outputs.last_hidden_state[:, 0, :]  # Use [CLS] token embedding
 
-# Extract embeddings
-title_train_emb = extract_embeddings(title_train_enc)
-desc_train_emb = extract_embeddings(desc_train_enc)
-code_train_emb = extract_embeddings(code_train_enc)
+SAVE_PATH = "precomputed_embeddings"
 
-title_val_emb = extract_embeddings(title_val_enc)
-desc_val_emb = extract_embeddings(desc_val_enc)
-code_val_emb = extract_embeddings(code_val_enc)
+# check if the directory exists
+# if not, create it and compute / save the embeddings
+# if it exists, load the embeddings
 
-title_test_emb = extract_embeddings(title_test_enc)
-desc_test_emb = extract_embeddings(desc_test_enc)
-code_test_emb = extract_embeddings(code_test_enc)
+if not os.path.exists(SAVE_PATH):
+    os.makedirs(SAVE_PATH)
+
+    with tf.device('/CPU:0'):
+        title_train_emb = extract_embeddings(title_train_enc)
+        desc_train_emb = extract_embeddings(desc_train_enc)
+        code_train_emb = extract_embeddings(code_train_enc)
+
+        title_val_emb = extract_embeddings(title_val_enc)
+        desc_val_emb = extract_embeddings(desc_val_enc)
+        code_val_emb = extract_embeddings(code_val_enc)
+
+        title_test_emb = extract_embeddings(title_test_enc)
+        desc_test_emb = extract_embeddings(desc_test_enc)
+        code_test_emb = extract_embeddings(code_test_enc)
+
+    np.savez_compressed(
+        os.path.join(SAVE_PATH, "train_embeddings.npz"),
+        title=title_train_emb,
+        desc=desc_train_emb,
+        code=code_train_emb,
+        y=y_train
+    )
+
+    np.savez_compressed(
+        os.path.join(SAVE_PATH, "val_embeddings.npz"),
+        title=title_val_emb,
+        desc=desc_val_emb,
+        code=code_val_emb,
+        y=y_val
+    )
+
+    np.savez_compressed(
+        os.path.join(SAVE_PATH, "test_embeddings.npz"),
+        title=title_test_emb,
+        desc=desc_test_emb,
+        code=code_test_emb,
+        y=y_test
+    )
+else:
+    train_data = np.load(os.path.join(SAVE_PATH, "train_embeddings.npz"))
+    val_data = np.load(os.path.join(SAVE_PATH, "val_embeddings.npz"))
+    test_data = np.load(os.path.join(SAVE_PATH, "test_embeddings.npz"))
+
+    title_train_emb = train_data["title"]
+    desc_train_emb = train_data["desc"]
+    code_train_emb = train_data["code"]
+    y_train = train_data["y"]
+
+    title_val_emb = val_data["title"]
+    desc_val_emb = val_data["desc"]
+    code_val_emb = val_data["code"]
+    y_val = val_data["y"]
+
+    title_test_emb = test_data["title"]
+    desc_test_emb = test_data["desc"]
+    code_test_emb = test_data["code"]
+    y_test = test_data["y"]
+
 
 # Convert labels to tensors
 y_train_tensor = tf.convert_to_tensor(y_train, dtype=tf.float32)
@@ -112,9 +176,9 @@ code_input = layers.Input(shape=(768,))
 
 # Concatenate features
 x = layers.Concatenate()([title_input, desc_input, code_input])
-x = layers.Dense(256, activation='relu')(x)
+x = layers.Dense(1024, activation='relu')(x)
 x = layers.Dropout(0.3)(x)
-x = layers.Dense(128, activation='relu')(x)
+x = layers.Dense(512, activation='relu')(x)
 x = layers.Dropout(0.3)(x)
 
 # Regression output
@@ -127,9 +191,10 @@ model = tf.keras.Model(
 )
 
 # Compile model
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4, clipnorm=1.0)
 model.compile(
     loss='mean_squared_error',
-    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+    optimizer=optimizer,
     metrics=['mean_absolute_error']
 )
 
@@ -146,7 +211,7 @@ early_stopping = keras.callbacks.EarlyStopping(
 history = model.fit(
     [title_train_emb, desc_train_emb, code_train_emb], y_train_tensor,
     validation_data=([title_val_emb, desc_val_emb, code_val_emb], y_val_tensor),
-    epochs=10000, batch_size=4, callbacks=[early_stopping]
+    epochs=10000, batch_size=16, callbacks=[early_stopping]
 )
 
 # Evaluate on test set
