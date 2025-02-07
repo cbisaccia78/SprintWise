@@ -1,6 +1,3 @@
-keras
-tensorflow
-numpy
 flask
 pydantic
 confluent-kafka
