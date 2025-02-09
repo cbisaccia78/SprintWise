@@ -5,7 +5,7 @@ import pdb
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras.layers as layers
+from tensorflow.keras.layers import Dense, BatchNormalization, Activation, Add, Input, Concatenate, Dropout, Conv1D, GlobalAveragePooling1D, Reshape
 import tensorflow.keras as keras
 from transformers import AutoTokenizer, TFAutoModel
 from sklearn.model_selection import train_test_split
@@ -37,6 +37,7 @@ json_data_path = sys.argv[1]
 # Load JSON data
 with open(json_data_path, "r", encoding="utf-8") as file:
     data = json.load(file)
+    data = data[:600]
 
 
 # Extract data
@@ -169,26 +170,76 @@ y_train_tensor = tf.convert_to_tensor(y_train, dtype=tf.float32)
 y_val_tensor = tf.convert_to_tensor(y_val, dtype=tf.float32)
 y_test_tensor = tf.convert_to_tensor(y_test, dtype=tf.float32)
 
-# Input layers
-title_input = layers.Input(shape=(768,))
-desc_input = layers.Input(shape=(768,))
-code_input = layers.Input(shape=(768,))
 
-# Concatenate features
-x = layers.Concatenate()([title_input, desc_input, code_input])
-x = layers.Dense(1024, activation='relu')(x)
-x = layers.Dropout(0.3)(x)
-x = layers.Dense(512, activation='relu')(x)
-x = layers.Dropout(0.3)(x)
+def residual_block(x, filters, kernel_size=3, dropout_rate=0.3):
+    """A residual block with a Conv1D layer, batch normalization, and dropout."""
+    shortcut = x  # Save input for residual connection
+    
+    x = Conv1D(filters, kernel_size, padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(dropout_rate)(x)
+    
+    x = Conv1D(filters, kernel_size, padding='same')(x)
+    x = BatchNormalization()(x)
+    
+    # Add residual connection (shortcut)
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)  # Apply activation after addition
+    x = Dropout(dropout_rate)(x)
+    
+    return x
 
-# Regression output
-output = layers.Dense(1, activation='linear')(x)
+def build_model(input_dim, num_residual_blocks=2, filters=64, kernel_size=3, output_dim=1, dropout_rate=0.3):
+    inputs = Input(shape=(input_dim, 1))  # Adding channel dimension for Conv1D
+    
+    # First convolutional layer before residual blocks
+    x = Conv1D(filters, kernel_size, padding='same', activation='relu')(inputs)
+    x = Dropout(dropout_rate)(x)
+    
+    # Stacking multiple residual blocks
+    for _ in range(num_residual_blocks):
+        x = residual_block(x, filters, kernel_size, dropout_rate)
+    
+    # Global pooling to reduce dimensionality
+    x = GlobalAveragePooling1D()(x)
+    x = Dropout(dropout_rate)(x)
+    
+    # Output layer (regression task)
+    outputs = tf.keras.layers.Dense(output_dim)(x)  # No activation (for regression)
+    
+    model = tf.keras.Model(inputs, outputs)
+    return model
 
-# Define Keras Model
-model = tf.keras.Model(
-    inputs=[title_input, desc_input, code_input],
-    outputs=output
-)
+num_residual_blocks = 10
+hidden_units=256
+filters=64
+kernel_size=3
+dropout_rate=0.3
+
+title_input = Input(shape=(768,))
+desc_input = Input(shape=(768,))
+code_input = Input(shape=(768,))
+
+# Use Reshape to add the channel dimension (768, 1)
+title_reshaped = Reshape((768, 1))(title_input)
+desc_reshaped = Reshape((768, 1))(desc_input)
+code_reshaped = Reshape((768, 1))(code_input)
+
+# Process Each Input Separately and Merge Later
+title_features = build_model(768, num_residual_blocks, filters, kernel_size, 1, dropout_rate)(title_reshaped)
+desc_features = build_model(768, num_residual_blocks, filters, kernel_size, 1, dropout_rate)(desc_reshaped)
+code_features = build_model(768, num_residual_blocks, filters, kernel_size, 1, dropout_rate)(code_reshaped)
+
+# Merge features from title, description, and code
+merged = Concatenate()([title_features, desc_features, code_features])
+
+# Final regression output layer
+output = tf.keras.layers.Dense(1)(merged)
+
+# Define final model
+model = tf.keras.models.Model(inputs=[title_input, desc_input, code_input], outputs=output)
+model.summary()
 
 # Compile model
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4, clipnorm=1.0)
@@ -203,7 +254,7 @@ print(model.summary())
 # Add early stopping and model checkpoint
 early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss',
-    patience=100,
+    patience=500,
     restore_best_weights=True
 )
 
@@ -211,8 +262,7 @@ early_stopping = keras.callbacks.EarlyStopping(
 history = model.fit(
     [title_train_emb, desc_train_emb, code_train_emb], y_train_tensor,
     validation_data=([title_val_emb, desc_val_emb, code_val_emb], y_val_tensor),
-    epochs=10000, batch_size=16, callbacks=[early_stopping]
-)
+    epochs=10000, batch_size=32)
 
 # Evaluate on test set
 test_loss, test_mae = model.evaluate([title_test_emb, desc_test_emb, code_test_emb], y_test_tensor)
