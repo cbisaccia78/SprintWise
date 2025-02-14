@@ -2,3 +2,5 @@ sklearn
 keras
 tensorflow[and-cuda]
 numpy
+transformers
+pillow
