@@ -41,7 +41,6 @@ pip-wheel-metadata/
 #  Docker
 # =============================================================================
 # Ignore the Docker build context directories/files if needed
-**/Dockerfile*
 **/docker-compose*
 
 # =============================================================================
