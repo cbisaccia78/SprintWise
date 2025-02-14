@@ -211,11 +211,11 @@ def build_model(input_dim, num_residual_blocks=2, filters=64, kernel_size=3, out
     model = tf.keras.Model(inputs, outputs)
     return model
 
-num_residual_blocks = 10
-hidden_units=256
+num_residual_blocks = 25
+hidden_units=512
 filters=64
 kernel_size=3
-dropout_rate=0.3
+dropout_rate=0.25
 
 title_input = Input(shape=(768,))
 desc_input = Input(shape=(768,))
@@ -234,6 +234,7 @@ code_features = build_model(768, num_residual_blocks, filters, kernel_size, 1, d
 # Merge features from title, description, and code
 merged = Concatenate()([title_features, desc_features, code_features])
 
+merged = Dense(hidden_units, activation='relu')(merged)
 # Final regression output layer
 output = tf.keras.layers.Dense(1)(merged)
 
@@ -254,7 +255,7 @@ print(model.summary())
 # Add early stopping and model checkpoint
 early_stopping = keras.callbacks.EarlyStopping(
     monitor='val_loss',
-    patience=500,
+    patience=10,
     restore_best_weights=True
 )
 
@@ -262,7 +263,7 @@ early_stopping = keras.callbacks.EarlyStopping(
 history = model.fit(
     [title_train_emb, desc_train_emb, code_train_emb], y_train_tensor,
     validation_data=([title_val_emb, desc_val_emb, code_val_emb], y_val_tensor),
-    epochs=10000, batch_size=32)
+    epochs=10000, batch_size=32, callbacks=[early_stopping])
 
 # Evaluate on test set
 test_loss, test_mae = model.evaluate([title_test_emb, desc_test_emb, code_test_emb], y_test_tensor)
