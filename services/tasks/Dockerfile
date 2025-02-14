@@ -1,8 +1,8 @@
 FROM python:3.11
 
-WORKDIR /usr/local/app
+WORKDIR /usr/local/app/
 
-ENV DATABASE_URL ""
+#ENV DATABASE_URL=""
 
 COPY requirements.txt ./
 
@@ -15,4 +15,6 @@ EXPOSE 5000
 RUN useradd app
 USER app
 
-CMD ["gunicorn", "-w", "4", "-b", "127.0.0.1:5000", "app:app"]
+ENV PYTHONPATH=/usr/local/app
+
+CMD ["gunicorn", "-w", "4", "-b", "127.0.0.1:5000", "src.app:app"]

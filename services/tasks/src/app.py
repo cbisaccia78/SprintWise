@@ -2,12 +2,12 @@ from threading import Thread
 
 from flask import Flask
 
-from .database import create_db
-from .settings import config as cfg
-from .worker import EstimateCompleteConsumer
+from src.database import create_db
+from src.settings import config as cfg
+from src.worker import EstimateCompleteConsumer
 
-from .routes.task_routes import task_bp
-from .routes.project_routes import project_bp
+from src.routes.task_routes import task_bp
+from src.routes.project_routes import project_bp
 
 def create_app(config=None):
     app = Flask(__name__)
@@ -35,3 +35,5 @@ def create_app(config=None):
         app.teardown_appcontext(lambda exception: shutdown_thread())
 
     return app
+
+app = create_app()
