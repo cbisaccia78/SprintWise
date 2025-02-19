@@ -1,4 +1,5 @@
 from threading import Thread
+import atexit
 
 from flask import Flask
 
@@ -16,18 +17,16 @@ def create_app(config=None):
 
     if not config.testing:
         worker = TaskCreatedConsumer()
-
         worker_thread = Thread(target=worker.start)
-        
+        worker_thread.start()
+
         def shutdown_thread():
             worker.stop()  # Assuming the worker has a stop method to terminate the thread gracefully
             worker_thread.join()
 
-        worker_thread.start()
-        app.teardown_appcontext(lambda exception: shutdown_thread())
+        
+        atexit.register(shutdown_thread)
 
     return app
 
-if __name__ == '__main__':
-    app = create_app() # need to change to migrations instead of create_app
-    app.run()
+app = create_app()

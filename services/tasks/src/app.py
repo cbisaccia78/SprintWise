@@ -1,3 +1,4 @@
+import atexit
 from threading import Thread
 
 from flask import Flask
@@ -22,17 +23,17 @@ def create_app(config=None):
 
     app.register_blueprint(task_bp, url_prefix='/tasks')
     app.register_blueprint(project_bp, url_prefix='/projects')
+    
     if not config.testing:
         worker = EstimateCompleteConsumer()
-
         worker_thread = Thread(target=worker.start)
+        worker_thread.start()
 
         def shutdown_thread():
             worker.stop()
             worker_thread.join()
         
-        worker_thread.start()
-        app.teardown_appcontext(lambda exception: shutdown_thread())
+        atexit.register(shutdown_thread)
 
     return app
 
