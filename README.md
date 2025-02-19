@@ -1,0 +1,1 @@
+![App Diagram](docs/architecture/SprintWise.png)
