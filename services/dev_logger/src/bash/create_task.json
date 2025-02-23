@@ -1,0 +1,7 @@
+{
+  "title": "New Task",
+  "description": "This is a new task",
+  "project_id": 1,
+  "assigned_user": "user1",
+  "priority": "high"
+}

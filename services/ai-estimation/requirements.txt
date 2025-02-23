@@ -2,3 +2,4 @@ flask
 pydantic
 confluent-kafka
 requests
+gunicorn
