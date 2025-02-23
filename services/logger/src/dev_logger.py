@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class KafkaLogger:
     def __init__(self):
         self.consumer = Consumer({
-            'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092'),
+            'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'),
             'group.id': 'logger-group',
             'auto.offset.reset': 'earliest'
         })
@@ -40,6 +40,6 @@ class KafkaLogger:
             self.consumer.close()
             logging.info('Consumer closed')
 
-if __name__ == '__main__':
-    logger = KafkaLogger()
-    logger.start()
+
+logger = KafkaLogger()
+logger.start()

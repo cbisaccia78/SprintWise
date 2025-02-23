@@ -40,3 +40,13 @@ services:
       - kafka
     ports:
       - "5001:5001"
+
+  logger:
+    build: ./services/logger
+    container_name: logger
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - kafka
+    ports:
+      - "5002:5002"
