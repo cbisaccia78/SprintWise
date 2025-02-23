@@ -15,4 +15,4 @@ USER app
 
 ENV PYTHONPATH=/usr/local/app
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5002", "src.app:app"]
+CMD ["python", "src/dev_logger.py"]
