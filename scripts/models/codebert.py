@@ -270,4 +270,4 @@ test_loss, test_mae = model.evaluate([title_test_emb, desc_test_emb, code_test_e
 print(f"Test Loss: {test_loss:.4f}, Test MAE: {test_mae:.4f}")
 
 # Save model
-model.save("codebert_regression_model.keras")
+tf.saved_model.save(model, "codebert_regression_model")

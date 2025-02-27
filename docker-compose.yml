@@ -50,3 +50,13 @@ services:
       - kafka
     ports:
       - "5002:5002"
+
+  tf-serving:
+    image: tensorflow/serving
+    container_name: tf_serving
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./models:/models
+    environment:
+      - MODEL_NAME=codebert_regression_model
