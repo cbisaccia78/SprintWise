@@ -50,6 +50,6 @@ class TestModelRoute(unittest.TestCase):
         self.assertEqual(response['task_id'], 1)
         self.assertEqual(response['title'], 'test_title')
         self.assertEqual(response['description'], 'test_description')
-        self.assertEqual(response['code_snippet'], 'def test():\n    return 1')
+        self.assertEqual(response['code'], 'def test():\n    return 1')
         self.assertIn('estimated_time', response)
         self.assertIn('confidence', response)
