@@ -15,4 +15,4 @@ USER app
 
 ENV PYTHONPATH=/usr/local/app
 
-CMD ["python", "src/dev_logger.py"]
+CMD ["python", "src/main.py"]
