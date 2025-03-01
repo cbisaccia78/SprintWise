@@ -12,7 +12,7 @@ from src.settings import config
 
 # Here, we use the service name "tf-serving" (as defined in docker-compose)
     # and port 5003 as mapped in your docker-compose.
-TF_SERVING_URL = "http://tf-serving:5003/v1/models/codebert_regression_model:predict"
+TF_SERVING_URL = "http://tf-serving:8501/v1/models/codebert_regression_model:predict"
 
 if not config.testing:
     producer = Producer(config.kafka_producer_config)
