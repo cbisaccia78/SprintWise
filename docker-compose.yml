@@ -36,13 +36,15 @@ services:
     container_name: estimation_server
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - HF_HOME=/tmp/hf_cache
+      - TRANSFORMERS_CACHE=/tmp/hf_cache
     depends_on:
       - kafka
     ports:
       - "5001:5001"
 
   logger:
-    build: ./services/logger
+    build: ./services/dev_logger
     container_name: logger
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
@@ -52,10 +54,10 @@ services:
       - "5002:5002"
 
   tf-serving:
-    image: tensorflow/serving
+    image: tensorflow/serving:latest-gpu
     container_name: tf_serving
     ports:
-      - "5003:5003"
+      - "8501:8501"
     volumes:
       - ./models:/models
     environment:
