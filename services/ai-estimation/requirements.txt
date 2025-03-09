@@ -3,3 +3,6 @@ pydantic
 confluent-kafka
 requests
 gunicorn
+tensorflow
+tf-keras
+transformers

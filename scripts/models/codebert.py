@@ -29,7 +29,7 @@ def tokenize_inputs(text_list, max_length=512):
     )
 
 if len(sys.argv) != 2:
-    print("Usage: python json_data_path")
+    print("Usage: python codebert.py json_data_path")
     sys.exit(1)
 
 json_data_path = sys.argv[1]
@@ -217,9 +217,9 @@ filters=64
 kernel_size=3
 dropout_rate=0.25
 
-title_input = Input(shape=(768,))
-desc_input = Input(shape=(768,))
-code_input = Input(shape=(768,))
+title_input = Input(shape=(768,), name="title_input")
+desc_input = Input(shape=(768,), name="desc_input")
+code_input = Input(shape=(768,), name="code_input")
 
 # Use Reshape to add the channel dimension (768, 1)
 title_reshaped = Reshape((768, 1))(title_input)
@@ -269,5 +269,10 @@ history = model.fit(
 test_loss, test_mae = model.evaluate([title_test_emb, desc_test_emb, code_test_emb], y_test_tensor)
 print(f"Test Loss: {test_loss:.4f}, Test MAE: {test_mae:.4f}")
 
-# Save model
-tf.saved_model.save(model, "codebert_regression_model")
+# force variable initialization
+dummy_title = np.zeros((1, 768))
+dummy_desc = np.zeros((1, 768))
+dummy_code = np.zeros((1, 768))
+_ = model.predict([dummy_title, dummy_desc, dummy_code])
+    
+model.export("codebert_regression_model")

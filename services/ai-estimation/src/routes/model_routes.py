@@ -11,7 +11,7 @@ from src.schemas.model_schemas import TaskEstimateRequest
 from src.settings import config
 
 # Here, we use the service name "tf-serving" (as defined in docker-compose)
-    # and port 5003 as mapped in your docker-compose.
+# and port 8501 as mapped in docker-compose.
 TF_SERVING_URL = "http://tf-serving:8501/v1/models/codebert_regression_model:predict"
 
 if not config.testing:
@@ -24,25 +24,25 @@ MODEL_NAME = "microsoft/codebert-base"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 codebert = TFAutoModel.from_pretrained(MODEL_NAME)
 
-def extract_embedding(text):
-    """Extracts the [CLS] embedding from a text using CodeBERT."""
-    # Tokenize input text
-    tokens = tokenizer(
-        text,
-        padding='max_length',
+# Function to tokenize inputs for CodeBERT
+def tokenize_inputs(text_list, max_length=512):
+    return tokenizer(
+        text_list,
+        padding=True,
         truncation=True,
-        max_length=512,
-        return_tensors="tf"
+        max_length=max_length,
+        return_tensors="np"
     )
+
+def extract_embeddings(inputs):
+    """Extracts the [CLS] embedding from a text using CodeBERT."""
     # Run CodeBERT to get outputs
     outputs = codebert(
-        input_ids=tokens["input_ids"],
-        attention_mask=tokens["attention_mask"],
+        input_ids=tf.convert_to_tensor(inputs["input_ids"]),
+        attention_mask=tf.convert_to_tensor(inputs["attention_mask"]),
         training=False
     )
-    # Return the [CLS] embedding (as list so it's JSON serializable)
-    cls_embedding = outputs.last_hidden_state[:, 0, :].numpy().tolist()[0]
-    return cls_embedding
+    return outputs.last_hidden_state[:, 0, :]  # Use [CLS] token embedding
 
 @model_bp.route('/task', methods=['POST'])
 def estimate_task():
@@ -55,23 +55,27 @@ def estimate_task():
 
     # Precompute embeddings for input fields
     # (Assuming task has attributes: title, description, and code)
-    title_emb = extract_embedding(task.title)
-    desc_emb  = extract_embedding(task.description)
-    code_emb  = extract_embedding(task.code)
 
+    titles, descriptions, code_files = [task.title], [task.description], [""]
+    
+    titles = tokenize_inputs(titles)
+    descriptions  = tokenize_inputs(descriptions)
+    code_files  = tokenize_inputs(code_files)
+    
+    titles = extract_embeddings(titles)
+    descriptions = extract_embeddings(descriptions)
+    code_files = extract_embeddings(code_files)
+    
     # Build payload for TensorFlow Serving.
-    # Adjust input names according to how your model was exported.
     payload = {
         "instances": [
             {
-                "title_input": title_emb,
-                "desc_input": desc_emb,
-                "code_input": code_emb
+                "title_input": titles.numpy().tolist(),
+                "desc_input": descriptions.numpy().tolist(),
+                "code_input": code_files.numpy().tolist()
             }
         ]
     }
-    
-    # Call TensorFlow Serving to get prediction.
     
     try:
         resp = requests.post(TF_SERVING_URL, json=payload)
@@ -90,7 +94,6 @@ def estimate_task():
         return jsonify({'error': "Unexpected response structure from TF Serving"}), 500
 
     ret["estimated_time"] = estimated_time
-    ret["confidence"] = 0.9  # Optionally add other details
 
     if not config.testing:
         # Produce an event on Kafka

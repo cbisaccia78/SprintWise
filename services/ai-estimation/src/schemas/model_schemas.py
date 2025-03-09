@@ -13,4 +13,3 @@ class TaskEstimateRequest(TaskEstimateBase):
 
 class TaskEstimateResponse(TaskEstimateBase):
     estimated_time: float
-    confidence: float
